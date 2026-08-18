@@ -9,6 +9,7 @@ import Products from './pages/Products';
 import CreateProduct from './pages/CreateProduct';
 import EditProduct from './pages/EditProduct';
 import Categories from './pages/Categories';
+import BulkOperations from './pages/BulkOperations';
 import './index.css';
 
 function App() {
@@ -43,6 +44,13 @@ function App() {
                         <EditProduct />
                     </ProtectedRoute>
                 } />
+                {/* --- ADDED THIS ROUTE RIGHT HERE --- */}
+                <Route path="/products/bulk" element={
+                    <ProtectedRoute>
+                        <BulkOperations />
+                    </ProtectedRoute>
+                } />
+                {/* ------------------------------------ */}
                 <Route path="/categories" element={
                     <ProtectedRoute>
                         <Categories />
