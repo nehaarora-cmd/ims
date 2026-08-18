@@ -37,6 +37,20 @@ func ProductsHandler(db *gorm.DB) http.HandlerFunc {
 				json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request body"})
 				return
 			}
+
+			// --- START: QUANTITY & PRICE CHECKS ---
+			if product.Quantity < 0 {
+				w.WriteHeader(http.StatusBadRequest)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Quantity cannot be negative"})
+				return
+			}
+			if product.Price < 0 {
+				w.WriteHeader(http.StatusBadRequest)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Price cannot be negative"})
+				return
+			}
+			// --- END: QUANTITY & PRICE CHECKS ---
+
 			product.UserID = userID
 			db.Create(&product)
 			w.WriteHeader(http.StatusCreated)
@@ -103,6 +117,19 @@ func ProductByIDHandler(db *gorm.DB) http.HandlerFunc {
 				return
 			}
 
+			// --- START: QUANTITY & PRICE CHECKS ---
+			if inputData.Quantity < 0 {
+				w.WriteHeader(http.StatusBadRequest)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Quantity cannot be negative"})
+				return
+			}
+			if inputData.Price < 0 {
+				w.WriteHeader(http.StatusBadRequest)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Price cannot be negative"})
+				return
+			}
+			// --- END: QUANTITY & PRICE CHECKS ---
+
 			result := db.Model(&models.Product{}).Where("id = ? AND user_id = ?", id, userID).Updates(&inputData)
 			if result.Error != nil {
 				w.WriteHeader(http.StatusInternalServerError)
@@ -153,6 +180,19 @@ func BulkCreateHandler(db *gorm.DB) http.HandlerFunc {
 
 		var products []models.Product
 		for _, input := range req.Products {
+			// --- START: QUANTITY & PRICE CHECKS ---
+			if input.Quantity < 0 {
+				w.WriteHeader(http.StatusBadRequest)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Quantity cannot be negative"})
+				return
+			}
+			if input.Price < 0 {
+				w.WriteHeader(http.StatusBadRequest)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Price cannot be negative"})
+				return
+			}
+			// --- END: QUANTITY & PRICE CHECKS ---
+
 			products = append(products, models.Product{
 				UserID:      userID,
 				CategoryID:  input.CategoryID,
@@ -201,6 +241,19 @@ func BulkUpdateHandler(db *gorm.DB) http.HandlerFunc {
 			if result.Error != nil {
 				continue
 			}
+
+			// --- START: QUANTITY & PRICE CHECKS (Only if pointers are not nil) ---
+			if item.Quantity != nil && *item.Quantity < 0 {
+				w.WriteHeader(http.StatusBadRequest)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Quantity cannot be negative"})
+				return
+			}
+			if item.Price != nil && *item.Price < 0 {
+				w.WriteHeader(http.StatusBadRequest)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Price cannot be negative"})
+				return
+			}
+			// --- END: QUANTITY & PRICE CHECKS ---
 
 			// Build update map - only update fields that are provided
 			updateMap := make(map[string]interface{})
