@@ -8,12 +8,6 @@ function Products() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [selectedIds, setSelectedIds] = useState([]);
-    const [showBulkModal, setShowBulkModal] = useState(false);
-    const [bulkData, setBulkData] = useState('');
-    const [bulkError, setBulkError] = useState('');
-    const [showBulkUpdateModal, setShowBulkUpdateModal] = useState(false);
-    const [bulkUpdateData, setBulkUpdateData] = useState('');
-    const [bulkUpdateError, setBulkUpdateError] = useState('');
 
     useEffect(() => {
         fetchProducts();
@@ -77,119 +71,6 @@ function Products() {
         }
     };
 
-    const handleBulkCreate = async () => {
-        try {
-            const productsData = JSON.parse(bulkData);
-            
-            if (!Array.isArray(productsData) || productsData.length === 0) {
-                setBulkError('Please provide a valid array of products');
-                return;
-            }
-
-            const transformedProducts = [];
-            for (const p of productsData) {
-                if (!p.name) {
-                    setBulkError('Each product must have a name');
-                    return;
-                }
-                if (p.quantity === undefined || p.price === undefined) {
-                    setBulkError('Each product must have quantity and price');
-                    return;
-                }
-
-                const newProduct = {
-                    name: p.name,
-                    description: p.description || '',
-                    quantity: p.quantity,
-                    price: p.price,
-                };
-
-                if (p.category) {
-                    const category = categories.find(c => c.name.toLowerCase() === p.category.toLowerCase());
-                    if (category) {
-                        newProduct.category_id = category.id;
-                    } else {
-                        setBulkError(`Category "${p.category}" not found. Available: ${categories.map(c => c.name).join(', ')}`);
-                        return;
-                    }
-                } else {
-                    newProduct.category_id = null;
-                }
-
-                transformedProducts.push(newProduct);
-            }
-
-            const response = await productAPI.bulkCreate(transformedProducts);
-            setProducts([...products, ...response.data]);
-            setShowBulkModal(false);
-            setBulkData('');
-            setBulkError('');
-        } catch (err) {
-            if (err instanceof SyntaxError) {
-                setBulkError('Invalid JSON format. Please check your data.');
-            } else {
-                setBulkError(err.response?.data?.error || 'Failed to create products');
-            }
-        }
-    };
-
-    const handleBulkUpdate = async () => {
-        try {
-            const productsData = JSON.parse(bulkUpdateData);
-            
-            if (!Array.isArray(productsData) || productsData.length === 0) {
-                setBulkUpdateError('Please provide a valid array of products');
-                return;
-            }
-
-            const transformedProducts = [];
-            for (const p of productsData) {
-                if (!p.id) {
-                    setBulkUpdateError('Each product must have an id');
-                    return;
-                }
-
-                const updateItem = { id: p.id };
-
-                if (p.name !== undefined) updateItem.name = p.name;
-                if (p.description !== undefined) updateItem.description = p.description;
-                if (p.quantity !== undefined) updateItem.quantity = p.quantity;
-                if (p.price !== undefined) updateItem.price = p.price;
-
-                if (p.category !== undefined) {
-                    if (p.category === null || p.category === '') {
-                        updateItem.category_id = null;
-                    } else {
-                        const category = categories.find(c => c.name.toLowerCase() === p.category.toLowerCase());
-                        if (category) {
-                            updateItem.category_id = category.id;
-                        } else {
-                            setBulkUpdateError(`Category "${p.category}" not found. Available: ${categories.map(c => c.name).join(', ')}`);
-                            return;
-                        }
-                    }
-                }
-
-                transformedProducts.push(updateItem);
-            }
-
-            const response = await productAPI.bulkUpdate(transformedProducts);
-            const updatedIds = response.data.map(p => p.id);
-            setProducts(products.map(p => 
-                updatedIds.includes(p.id) ? response.data.find(u => u.id === p.id) : p
-            ));
-            setShowBulkUpdateModal(false);
-            setBulkUpdateData('');
-            setBulkUpdateError('');
-        } catch (err) {
-            if (err instanceof SyntaxError) {
-                setBulkUpdateError('Invalid JSON format. Please check your data.');
-            } else {
-                setBulkUpdateError(err.response?.data?.error || 'Failed to update products');
-            }
-        }
-    };
-
     const getCategoryName = (categoryId) => {
         if (!categoryId) return 'Uncategorized';
         const cat = categories.find(c => c.id === categoryId);
@@ -211,12 +92,7 @@ function Products() {
                 <h1 style={styles.title}>Products</h1>
                 <div style={styles.actions}>
                     <Link to="/products/new" style={styles.addButton}>Add Product</Link>
-                    <button onClick={() => setShowBulkModal(true)} style={styles.bulkCreateButton}>
-                        Bulk Create
-                    </button>
-                    <button onClick={() => setShowBulkUpdateModal(true)} style={styles.bulkUpdateButton}>
-                        Bulk Update
-                    </button>
+                    <Link to="/products/bulk" style={styles.bulkButton}>Bulk Operations</Link>
                 </div>
             </div>
 
@@ -290,101 +166,6 @@ function Products() {
                     </table>
                 </div>
             )}
-
-            {/* Bulk Create Modal */}
-            {showBulkModal && (
-                <div style={styles.modalOverlay} onClick={() => setShowBulkModal(false)}>
-                    <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-                        <h2 style={styles.modalTitle}>Bulk Create Products</h2>
-                        <p style={styles.modalDescription}>
-                            Paste a JSON array of products below. Each product can have:
-                            <br />
-                            <code>{'{ "name", "description", "quantity", "price", "category" }'}</code>
-                            <br />
-                            <span style={{ color: '#ffa502' }}>category: </span>
-                            Use the category name. It will be looked up automatically.
-                            <br />
-                            <span style={{ color: '#00d4aa' }}>Required fields: </span>
-                            name, quantity, price
-                        </p>
-
-                        <textarea
-                            value={bulkData}
-                            onChange={(e) => {
-                                setBulkData(e.target.value);
-                                setBulkError('');
-                            }}
-                            style={styles.textarea}
-                            placeholder='[{"name": "Product", "description": "Desc", "quantity": 10, "price": 9.99, "category": "Electronics"}]'
-                            rows={10}
-                        />
-
-                        {bulkError && <p style={styles.bulkError}>{bulkError}</p>}
-
-                        <div style={styles.modalActions}>
-                            <button onClick={handleBulkCreate} style={styles.submitButton}>
-                                Create Products
-                            </button>
-                            <button onClick={() => {
-                                setShowBulkModal(false);
-                                setBulkData('');
-                                setBulkError('');
-                            }} style={styles.cancelButton}>
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Bulk Update Modal */}
-            {showBulkUpdateModal && (
-                <div style={styles.modalOverlay} onClick={() => setShowBulkUpdateModal(false)}>
-                    <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-                        <h2 style={styles.modalTitle}>Bulk Update Products</h2>
-                        <p style={styles.modalDescription}>
-                            Paste a JSON array of products to update. Only fields you include will be updated.
-                            <br />
-                            <code>{'{ "id", "name", "description", "quantity", "price", "category" }'}</code>
-                            <br />
-                            <span style={{ color: '#ffa502' }}>id: </span>
-                            Required - the ID of the product to update.
-                            <br />
-                            <span style={{ color: '#ffa502' }}>category: </span>
-                            Use the category name. Set to <code>null</code> or empty string to remove category.
-                            <br />
-                            <span style={{ color: '#00d4aa' }}>Note: </span>
-                            Only include the fields you want to change.
-                        </p>
-
-                        <textarea
-                            value={bulkUpdateData}
-                            onChange={(e) => {
-                                setBulkUpdateData(e.target.value);
-                                setBulkUpdateError('');
-                            }}
-                            style={styles.textarea}
-                            placeholder='[{"id": 1, "name": "Updated Product", "description": "New desc", "quantity": 20, "price": 15.99, "category": "Electronics"}]'
-                            rows={10}
-                        />
-
-                        {bulkUpdateError && <p style={styles.bulkError}>{bulkUpdateError}</p>}
-
-                        <div style={styles.modalActions}>
-                            <button onClick={handleBulkUpdate} style={styles.submitButton}>
-                                Update Products
-                            </button>
-                            <button onClick={() => {
-                                setShowBulkUpdateModal(false);
-                                setBulkUpdateData('');
-                                setBulkUpdateError('');
-                            }} style={styles.cancelButton}>
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
@@ -426,25 +207,15 @@ const styles = {
         cursor: 'pointer',
         transition: 'background 0.2s',
     },
-    bulkCreateButton: {
+    bulkButton: {
         backgroundColor: '#4facfe',
         color: '#ffffff',
         padding: '10px 20px',
         borderRadius: '6px',
-        border: 'none',
+        textDecoration: 'none',
         fontSize: '14px',
         fontWeight: '500',
-        cursor: 'pointer',
-        transition: 'background 0.2s',
-    },
-    bulkUpdateButton: {
-        backgroundColor: '#ffa502',
-        color: '#ffffff',
-        padding: '10px 20px',
-        borderRadius: '6px',
         border: 'none',
-        fontSize: '14px',
-        fontWeight: '500',
         cursor: 'pointer',
         transition: 'background 0.2s',
     },
@@ -551,84 +322,6 @@ const styles = {
         textAlign: 'center',
         marginTop: '60px',
         fontSize: '16px',
-    },
-    modalOverlay: {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.7)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1000,
-    },
-    modal: {
-        backgroundColor: '#1a1a2e',
-        padding: '30px',
-        borderRadius: '10px',
-        maxWidth: '700px',
-        width: '90%',
-        maxHeight: '90vh',
-        overflowY: 'auto',
-        border: '1px solid #2a2a4e',
-    },
-    modalTitle: {
-        color: '#ffffff',
-        fontSize: '22px',
-        fontWeight: '600',
-        marginBottom: '15px',
-    },
-    modalDescription: {
-        color: '#aaa',
-        marginBottom: '20px',
-        fontSize: '14px',
-        lineHeight: '1.8',
-    },
-    textarea: {
-        width: '100%',
-        padding: '12px',
-        borderRadius: '6px',
-        border: '1px solid #2a2a4e',
-        backgroundColor: '#0f0f1a',
-        color: '#e0e0e0',
-        fontSize: '13px',
-        fontFamily: 'monospace',
-        resize: 'vertical',
-        minHeight: '200px',
-    },
-    bulkError: {
-        color: '#ff4757',
-        marginTop: '12px',
-        fontSize: '14px',
-    },
-    modalActions: {
-        display: 'flex',
-        gap: '10px',
-        marginTop: '20px',
-        flexWrap: 'wrap',
-    },
-    submitButton: {
-        backgroundColor: '#00d4aa',
-        color: '#ffffff',
-        padding: '10px 20px',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontSize: '14px',
-        fontWeight: '500',
-        flex: 1,
-    },
-    cancelButton: {
-        backgroundColor: '#ff4757',
-        color: '#ffffff',
-        padding: '10px 20px',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontSize: '14px',
-        fontWeight: '500',
     },
 };
 
