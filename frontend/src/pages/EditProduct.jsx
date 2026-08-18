@@ -186,4 +186,8 @@ const styles = {
     },
     cancelButton: {
         backgroundColor: '#ff4757',
-        color: '#fff
+        color: '#fff'
+    }
+}
+
+export default EditProduct;
