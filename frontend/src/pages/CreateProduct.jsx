@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import API, { categoryAPI } from '../api/api';
 
 function CreateProduct() {
@@ -43,12 +44,36 @@ function CreateProduct() {
         }
     };
 
+    // Variants for staggered form entrance
+    const formVariants = {
+        hidden: { opacity: 0, y: 10 },
+        visible: { opacity: 1, y: 0, transition: { staggerChildren: 0.1 } }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 10 },
+        visible: { opacity: 1, y: 0 }
+    };
+
     return (
-        <div style={styles.container}>
+        <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            transition={{ duration: 0.3 }}
+            style={styles.container}
+        >
             <h1 style={styles.title}>Add Product</h1>
             {error && <p style={styles.error}>{error}</p>}
-            <form onSubmit={handleSubmit} style={styles.form}>
-                <input
+            
+            <motion.form 
+                onSubmit={handleSubmit} 
+                style={styles.form}
+                variants={formVariants}
+                initial="hidden"
+                animate="visible"
+            >
+                <motion.input
+                    variants={itemVariants}
                     type="text"
                     placeholder="Product Name"
                     value={name}
@@ -56,13 +81,15 @@ function CreateProduct() {
                     style={styles.input}
                     required
                 />
-                <textarea
+                <motion.textarea
+                    variants={itemVariants}
                     placeholder="Description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     style={styles.textarea}
                 />
-                <select
+                <motion.select
+                    variants={itemVariants}
                     value={categoryId}
                     onChange={(e) => setCategoryId(e.target.value)}
                     style={styles.input}
@@ -71,8 +98,9 @@ function CreateProduct() {
                     {categories.map(cat => (
                         <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
-                </select>
-                <input
+                </motion.select>
+                <motion.input
+                    variants={itemVariants}
                     type="number"
                     placeholder="Quantity"
                     value={quantity}
@@ -80,7 +108,8 @@ function CreateProduct() {
                     style={styles.input}
                     required
                 />
-                <input
+                <motion.input
+                    variants={itemVariants}
                     type="number"
                     step="0.01"
                     placeholder="Price"
@@ -89,12 +118,27 @@ function CreateProduct() {
                     style={styles.input}
                     required
                 />
-                <div style={styles.actions}>
-                    <button type="submit" style={styles.submitButton}>Create Product</button>
-                    <button type="button" onClick={() => navigate('/products')} style={styles.cancelButton}>Cancel</button>
-                </div>
-            </form>
-        </div>
+                <motion.div variants={itemVariants} style={styles.actions}>
+                    <motion.button 
+                        whileHover={{ scale: 1.02 }} 
+                        whileTap={{ scale: 0.95 }}
+                        type="submit" 
+                        style={styles.submitButton}
+                    >
+                        Create Product
+                    </motion.button>
+                    <motion.button 
+                        whileHover={{ scale: 1.02 }} 
+                        whileTap={{ scale: 0.95 }}
+                        type="button" 
+                        onClick={() => navigate('/products')} 
+                        style={styles.cancelButton}
+                    >
+                        Cancel
+                    </motion.button>
+                </motion.div>
+            </motion.form>
+        </motion.div>
     );
 }
 

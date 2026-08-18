@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { productAPI, categoryAPI } from '../api/api';
 
 function Products() {
@@ -87,23 +88,44 @@ function Products() {
     if (error) return <div style={styles.error}>{error}</div>;
 
     return (
-        <div style={styles.container}>
+        <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            transition={{ duration: 0.3 }}
+            style={styles.container}
+        >
             <div style={styles.header}>
                 <h1 style={styles.title}>Products</h1>
                 <div style={styles.actions}>
-                    <Link to="/products/new" style={styles.addButton}>Add Product</Link>
-                    <Link to="/products/bulk" style={styles.bulkButton}>Bulk Operations</Link>
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.95 }}>
+                        <Link to="/products/new" style={styles.addButton}>Add Product</Link>
+                    </motion.div>
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.95 }}>
+                        <Link to="/products/bulk" style={styles.bulkButton}>Bulk Operations</Link>
+                    </motion.div>
                 </div>
             </div>
 
-            {selectedIds.length > 0 && (
-                <div style={styles.bulkActions}>
-                    <span>{selectedIds.length} selected</span>
-                    <button onClick={handleBulkDelete} style={styles.bulkDeleteButton}>
-                        Delete Selected
-                    </button>
-                </div>
-            )}
+            <AnimatePresence>
+                {selectedIds.length > 0 && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        style={styles.bulkActions}
+                    >
+                        <span>{selectedIds.length} selected</span>
+                        <motion.button 
+                            whileHover={{ scale: 1.02 }} 
+                            whileTap={{ scale: 0.95 }}
+                            onClick={handleBulkDelete} 
+                            style={styles.bulkDeleteButton}
+                        >
+                            Delete Selected
+                        </motion.button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {products.length === 0 ? (
                 <p style={styles.empty}>No products yet. Create your first product.</p>
@@ -129,44 +151,63 @@ function Products() {
                             </tr>
                         </thead>
                         <tbody>
-                            {products.map(product => {
-                                const stockClass = getLowStockClass(product.quantity);
-                                return (
-                                    <tr key={product.id} style={styles.tr}>
-                                        <td style={styles.td}>
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedIds.includes(product.id)}
-                                                onChange={() => handleSelect(product.id)}
-                                            />
-                                        </td>
-                                        <td style={{...styles.td, ...styles.idCell}}>{product.id}</td>
-                                        <td style={styles.td}>{product.name}</td>
-                                        <td style={styles.td}>{product.description || '-'}</td>
-                                        <td style={styles.td}>{getCategoryName(product.category_id)}</td>
-                                        <td style={{
-                                            ...styles.td,
-                                            ...styles.quantity,
-                                            ...(stockClass === 'critical' ? styles.critical : {}),
-                                            ...(stockClass === 'warning' ? styles.warning : {})
-                                        }}>
-                                            {product.quantity}
-                                            {stockClass === 'critical' && ' (Critical)'}
-                                            {stockClass === 'warning' && ' (Low)'}
-                                        </td>
-                                        <td style={styles.td}>₹{parseFloat(product.price).toFixed(2)}</td>
-                                        <td style={styles.td}>
-                                            <Link to={`/products/${product.id}/edit`} style={styles.editButton}>Edit</Link>
-                                            <button onClick={() => handleDelete(product.id)} style={styles.deleteButton}>Delete</button>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
+                            <AnimatePresence mode="popLayout">
+                                {products.map(product => {
+                                    const stockClass = getLowStockClass(product.quantity);
+                                    return (
+                                        <motion.tr
+                                            key={product.id}
+                                            layout
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, scale: 0.95 }}
+                                            transition={{ duration: 0.15 }}
+                                            style={styles.tr}
+                                        >
+                                            <td style={styles.td}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedIds.includes(product.id)}
+                                                    onChange={() => handleSelect(product.id)}
+                                                />
+                                            </td>
+                                            <td style={{...styles.td, ...styles.idCell}}>{product.id}</td>
+                                            <td style={styles.td}>{product.name}</td>
+                                            <td style={styles.td}>{product.description || '-'}</td>
+                                            <td style={styles.td}>{getCategoryName(product.category_id)}</td>
+                                            <td style={{
+                                                ...styles.td,
+                                                ...styles.quantity,
+                                                ...(stockClass === 'critical' ? styles.critical : {}),
+                                                ...(stockClass === 'warning' ? styles.warning : {})
+                                            }}>
+                                                {product.quantity}
+                                                {stockClass === 'critical' && ' (Critical)'}
+                                                {stockClass === 'warning' && ' (Low)'}
+                                            </td>
+                                            <td style={styles.td}>₹{parseFloat(product.price).toFixed(2)}</td>
+                                            <td style={styles.td}>
+                                                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ display: 'inline-block', marginRight: '6px' }}>
+                                                    <Link to={`/products/${product.id}/edit`} style={styles.editButton}>Edit</Link>
+                                                </motion.div>
+                                                <motion.button 
+                                                    whileHover={{ scale: 1.05 }} 
+                                                    whileTap={{ scale: 0.95 }}
+                                                    onClick={() => handleDelete(product.id)} 
+                                                    style={styles.deleteButton}
+                                                >
+                                                    Delete
+                                                </motion.button>
+                                            </td>
+                                        </motion.tr>
+                                    );
+                                })}
+                            </AnimatePresence>
                         </tbody>
                     </table>
                 </div>
             )}
-        </div>
+        </motion.div>
     );
 }
 

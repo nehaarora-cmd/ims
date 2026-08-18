@@ -1,5 +1,6 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
@@ -13,50 +14,74 @@ import BulkOperations from './pages/BulkOperations';
 import './index.css';
 
 function App() {
+    const location = useLocation();
+
     return (
         <BrowserRouter>
             <Navbar />
-            <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/" element={
-                    <ProtectedRoute>
-                        <Dashboard />
-                    </ProtectedRoute>
-                } />
-                <Route path="/dashboard" element={
-                    <ProtectedRoute>
-                        <Dashboard />
-                    </ProtectedRoute>
-                } />
-                <Route path="/products" element={
-                    <ProtectedRoute>
-                        <Products />
-                    </ProtectedRoute>
-                } />
-                <Route path="/products/new" element={
-                    <ProtectedRoute>
-                        <CreateProduct />
-                    </ProtectedRoute>
-                } />
-                <Route path="/products/:id/edit" element={
-                    <ProtectedRoute>
-                        <EditProduct />
-                    </ProtectedRoute>
-                } />
-                {/* --- ADDED THIS ROUTE RIGHT HERE --- */}
-                <Route path="/products/bulk" element={
-                    <ProtectedRoute>
-                        <BulkOperations />
-                    </ProtectedRoute>
-                } />
-                {/* ------------------------------------ */}
-                <Route path="/categories" element={
-                    <ProtectedRoute>
-                        <Categories />
-                    </ProtectedRoute>
-                } />
-            </Routes>
+            <AnimatePresence mode="wait">
+                <Routes location={location} key={location.pathname}>
+                    <Route path="/login" element={
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }}>
+                            <Login />
+                        </motion.div>
+                    } />
+                    <Route path="/register" element={
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }}>
+                            <Register />
+                        </motion.div>
+                    } />
+                    <Route path="/" element={
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }}>
+                            <ProtectedRoute>
+                                <Dashboard />
+                            </ProtectedRoute>
+                        </motion.div>
+                    } />
+                    <Route path="/dashboard" element={
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }}>
+                            <ProtectedRoute>
+                                <Dashboard />
+                            </ProtectedRoute>
+                        </motion.div>
+                    } />
+                    <Route path="/products" element={
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }}>
+                            <ProtectedRoute>
+                                <Products />
+                            </ProtectedRoute>
+                        </motion.div>
+                    } />
+                    <Route path="/products/new" element={
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }}>
+                            <ProtectedRoute>
+                                <CreateProduct />
+                            </ProtectedRoute>
+                        </motion.div>
+                    } />
+                    <Route path="/products/:id/edit" element={
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }}>
+                            <ProtectedRoute>
+                                <EditProduct />
+                            </ProtectedRoute>
+                        </motion.div>
+                    } />
+                    <Route path="/products/bulk" element={
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }}>
+                            <ProtectedRoute>
+                                <BulkOperations />
+                            </ProtectedRoute>
+                        </motion.div>
+                    } />
+                    <Route path="/categories" element={
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }}>
+                            <ProtectedRoute>
+                                <Categories />
+                            </ProtectedRoute>
+                        </motion.div>
+                    } />
+                </Routes>
+            </AnimatePresence>
         </BrowserRouter>
     );
 }

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import API from '../api/api';
 
 function Login() {
@@ -21,13 +22,44 @@ function Login() {
         }
     };
 
+    // Animation variants
+    const cardVariants = {
+        hidden: { opacity: 0, y: 30 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+    };
+
+    const formVariants = {
+        hidden: { opacity: 0 },
+        visible: { 
+            opacity: 1, 
+            transition: { staggerChildren: 0.1, delayChildren: 0.2 }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 10 },
+        visible: { opacity: 1, y: 0 }
+    };
+
     return (
         <div style={styles.container}>
-            <div style={styles.card}>
+            <motion.div 
+                style={styles.card}
+                variants={cardVariants}
+                initial="hidden"
+                animate="visible"
+            >
                 <h1 style={styles.title}>Login</h1>
                 {error && <p style={styles.error}>{error}</p>}
-                <form onSubmit={handleSubmit}>
-                    <input
+                
+                <motion.form 
+                    onSubmit={handleSubmit}
+                    variants={formVariants}
+                    initial="hidden"
+                    animate="visible"
+                >
+                    <motion.input
+                        variants={itemVariants}
                         type="email"
                         placeholder="Email"
                         value={email}
@@ -35,7 +67,8 @@ function Login() {
                         style={styles.input}
                         required
                     />
-                    <input
+                    <motion.input
+                        variants={itemVariants}
                         type="password"
                         placeholder="Password"
                         value={password}
@@ -43,12 +76,28 @@ function Login() {
                         style={styles.input}
                         required
                     />
-                    <button type="submit" style={styles.button}>Login</button>
-                </form>
+                    <motion.button 
+                        variants={itemVariants}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.95 }}
+                        type="submit" 
+                        style={styles.button}
+                    >
+                        Login
+                    </motion.button>
+                </motion.form>
+                
                 <p style={styles.footer}>
-                    Don't have an account? <Link to="/register" style={styles.link}>Register</Link>
+                    Don't have an account?{' '}
+                    <motion.span
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        style={{ display: 'inline-block' }}
+                    >
+                        <Link to="/register" style={styles.link}>Register</Link>
+                    </motion.span>
                 </p>
-            </div>
+            </motion.div>
         </div>
     );
 }

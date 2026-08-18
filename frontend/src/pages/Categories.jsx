@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { categoryAPI } from '../api/api';
 
 function Categories() {
@@ -48,7 +49,12 @@ function Categories() {
     if (loading) return <div style={styles.loading}>Loading...</div>;
 
     return (
-        <div style={styles.container}>
+        <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            transition={{ duration: 0.3 }}
+            style={styles.container}
+        >
             <h1 style={styles.title}>Categories</h1>
 
             <form onSubmit={handleCreate} style={styles.form}>
@@ -59,7 +65,14 @@ function Categories() {
                     onChange={(e) => setNewCategory(e.target.value)}
                     style={styles.input}
                 />
-                <button type="submit" style={styles.button}>Add Category</button>
+                <motion.button 
+                    whileHover={{ scale: 1.05 }} 
+                    whileTap={{ scale: 0.95 }}
+                    type="submit" 
+                    style={styles.button}
+                >
+                    Add Category
+                </motion.button>
             </form>
 
             {error && <p style={styles.error}>{error}</p>}
@@ -68,15 +81,32 @@ function Categories() {
                 {categories.length === 0 ? (
                     <p style={styles.empty}>No categories yet. Create one!</p>
                 ) : (
-                    categories.map(cat => (
-                        <div key={cat.id} style={styles.item}>
-                            <span>{cat.name}</span>
-                            <button onClick={() => handleDelete(cat.id)} style={styles.deleteBtn}>Delete</button>
-                        </div>
-                    ))
+                    <AnimatePresence mode="popLayout">
+                        {categories.map(cat => (
+                            <motion.div 
+                                key={cat.id} 
+                                layout
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                transition={{ duration: 0.15 }}
+                                style={styles.item}
+                            >
+                                <span>{cat.name}</span>
+                                <motion.button 
+                                    whileHover={{ scale: 1.1 }} 
+                                    whileTap={{ scale: 0.9 }}
+                                    onClick={() => handleDelete(cat.id)} 
+                                    style={styles.deleteBtn}
+                                >
+                                    Delete
+                                </motion.button>
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
                 )}
             </div>
-        </div>
+        </motion.div>
     );
 }
 
@@ -111,6 +141,7 @@ const styles = {
         border: 'none',
         borderRadius: '5px',
         cursor: 'pointer',
+        fontWeight: '500',
     },
     list: {
         display: 'flex',

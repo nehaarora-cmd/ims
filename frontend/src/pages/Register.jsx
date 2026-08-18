@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import API from '../api/api';
 
 function Register() {
@@ -23,14 +24,63 @@ function Register() {
         }
     };
 
+    // Animation variants
+    const cardVariants = {
+        hidden: { opacity: 0, y: 30 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+    };
+
+    const formVariants = {
+        hidden: { opacity: 0 },
+        visible: { 
+            opacity: 1, 
+            transition: { staggerChildren: 0.1, delayChildren: 0.2 }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 10 },
+        visible: { opacity: 1, y: 0 }
+    };
+
     return (
         <div style={styles.container}>
-            <div style={styles.card}>
+            <motion.div 
+                style={styles.card}
+                variants={cardVariants}
+                initial="hidden"
+                animate="visible"
+            >
                 <h1 style={styles.title}>Register</h1>
-                {error && <p style={styles.error}>{error}</p>}
-                {success && <p style={styles.success}>{success}</p>}
-                <form onSubmit={handleSubmit}>
-                    <input
+                
+                {error && (
+                    <motion.p 
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        style={styles.error}
+                    >
+                        {error}
+                    </motion.p>
+                )}
+                
+                {success && (
+                    <motion.p 
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        style={styles.success}
+                    >
+                        {success}
+                    </motion.p>
+                )}
+                
+                <motion.form 
+                    onSubmit={handleSubmit}
+                    variants={formVariants}
+                    initial="hidden"
+                    animate="visible"
+                >
+                    <motion.input
+                        variants={itemVariants}
                         type="email"
                         placeholder="Email"
                         value={email}
@@ -38,7 +88,8 @@ function Register() {
                         style={styles.input}
                         required
                     />
-                    <input
+                    <motion.input
+                        variants={itemVariants}
                         type="password"
                         placeholder="Password"
                         value={password}
@@ -46,12 +97,28 @@ function Register() {
                         style={styles.input}
                         required
                     />
-                    <button type="submit" style={styles.button}>Register</button>
-                </form>
+                    <motion.button 
+                        variants={itemVariants}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.95 }}
+                        type="submit" 
+                        style={styles.button}
+                    >
+                        Register
+                    </motion.button>
+                </motion.form>
+                
                 <p style={styles.footer}>
-                    Already have an account? <Link to="/login" style={styles.link}>Login</Link>
+                    Already have an account?{' '}
+                    <motion.span
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        style={{ display: 'inline-block' }}
+                    >
+                        <Link to="/login" style={styles.link}>Login</Link>
+                    </motion.span>
                 </p>
-            </div>
+            </motion.div>
         </div>
     );
 }

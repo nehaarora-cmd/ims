@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { productAPI, categoryAPI } from '../api/api';
 
 function BulkOperations() {
@@ -126,7 +127,12 @@ function BulkOperations() {
     };
 
     return (
-        <div style={styles.container}>
+        <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            transition={{ duration: 0.3 }}
+            style={styles.container}
+        >
             <div style={styles.header}>
                 <h1 style={styles.title}>Bulk Operations</h1>
                 <Link to="/products" style={styles.backButton}>← Back to Products</Link>
@@ -150,65 +156,95 @@ function BulkOperations() {
                             </tr>
                         </thead>
                         <tbody>
-                            {createRows.map((row, index) => (
-                                <tr key={index} style={styles.tr}>
-                                    <td style={styles.td}>
-                                        <input 
-                                            style={styles.input} 
-                                            value={row.name} 
-                                            onChange={(e) => handleCreateChange(index, 'name', e.target.value)} 
-                                            placeholder="Product name"
-                                        />
-                                    </td>
-                                    <td style={styles.td}>
-                                        <input 
-                                            style={styles.input} 
-                                            value={row.description} 
-                                            onChange={(e) => handleCreateChange(index, 'description', e.target.value)} 
-                                            placeholder="Description"
-                                        />
-                                    </td>
-                                    <td style={styles.td}>
-                                        <input 
-                                            style={styles.input} 
-                                            type="number" 
-                                            value={row.quantity} 
-                                            onChange={(e) => handleCreateChange(index, 'quantity', e.target.value)} 
-                                        />
-                                    </td>
-                                    <td style={styles.td}>
-                                        <input 
-                                            style={styles.input} 
-                                            type="number" 
-                                            step="0.01"
-                                            value={row.price} 
-                                            onChange={(e) => handleCreateChange(index, 'price', e.target.value)} 
-                                        />
-                                    </td>
-                                    <td style={styles.td}>
-                                        <select 
-                                            style={styles.select} 
-                                            value={row.category} 
-                                            onChange={(e) => handleCreateChange(index, 'category', e.target.value)}
-                                        >
-                                            <option value="">Uncategorized</option>
-                                            {categories.map(c => (
-                                                <option key={c.id} value={c.name}>{c.name}</option>
-                                            ))}
-                                        </select>
-                                    </td>
-                                    <td style={styles.td}>
-                                        <button style={styles.removeBtn} onClick={() => removeCreateRow(index)}>✕</button>
-                                    </td>
-                                </tr>
-                            ))}
+                            <AnimatePresence mode="popLayout">
+                                {createRows.map((row, index) => (
+                                    <motion.tr 
+                                        key={index} 
+                                        layout
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.9 }}
+                                        transition={{ duration: 0.15 }}
+                                        style={styles.tr}
+                                    >
+                                        <td style={styles.td}>
+                                            <input 
+                                                style={styles.input} 
+                                                value={row.name} 
+                                                onChange={(e) => handleCreateChange(index, 'name', e.target.value)} 
+                                                placeholder="Product name"
+                                            />
+                                        </td>
+                                        <td style={styles.td}>
+                                            <input 
+                                                style={styles.input} 
+                                                value={row.description} 
+                                                onChange={(e) => handleCreateChange(index, 'description', e.target.value)} 
+                                                placeholder="Description"
+                                            />
+                                        </td>
+                                        <td style={styles.td}>
+                                            <input 
+                                                style={styles.input} 
+                                                type="number" 
+                                                value={row.quantity} 
+                                                onChange={(e) => handleCreateChange(index, 'quantity', e.target.value)} 
+                                            />
+                                        </td>
+                                        <td style={styles.td}>
+                                            <input 
+                                                style={styles.input} 
+                                                type="number" 
+                                                step="0.01"
+                                                value={row.price} 
+                                                onChange={(e) => handleCreateChange(index, 'price', e.target.value)} 
+                                            />
+                                        </td>
+                                        <td style={styles.td}>
+                                            <select 
+                                                style={styles.select} 
+                                                value={row.category} 
+                                                onChange={(e) => handleCreateChange(index, 'category', e.target.value)}
+                                            >
+                                                <option value="">Uncategorized</option>
+                                                {categories.map(c => (
+                                                    <option key={c.id} value={c.name}>{c.name}</option>
+                                                ))}
+                                            </select>
+                                        </td>
+                                        <td style={styles.td}>
+                                            <motion.button 
+                                                whileHover={{ scale: 1.1 }} 
+                                                whileTap={{ scale: 0.9 }}
+                                                style={styles.removeBtn} 
+                                                onClick={() => removeCreateRow(index)}
+                                            >
+                                                ✕
+                                            </motion.button>
+                                        </td>
+                                    </motion.tr>
+                                ))}
+                            </AnimatePresence>
                         </tbody>
                     </table>
                 </div>
-                <button style={styles.addRowBtn} onClick={addCreateRow}>+ Add Row</button>
-                <button style={styles.submitBtn} onClick={handleBulkCreate} disabled={loading}>
+                <motion.button 
+                    whileHover={{ scale: 1.02 }} 
+                    whileTap={{ scale: 0.95 }}
+                    style={styles.addRowBtn} 
+                    onClick={addCreateRow}
+                >
+                    + Add Row
+                </motion.button>
+                <motion.button 
+                    whileHover={{ scale: 1.02 }} 
+                    whileTap={{ scale: 0.95 }}
+                    style={styles.submitBtn} 
+                    onClick={handleBulkCreate} 
+                    disabled={loading}
+                >
                     {loading ? 'Creating...' : 'Create Products'}
-                </button>
+                </motion.button>
             </div>
 
             <hr style={styles.divider} />
@@ -230,77 +266,107 @@ function BulkOperations() {
                             </tr>
                         </thead>
                         <tbody>
-                            {updateRows.map((row, index) => (
-                                <tr key={index} style={styles.tr}>
-                                    <td style={styles.td}>
-                                        <input 
-                                            style={styles.input} 
-                                            value={row.id} 
-                                            onChange={(e) => handleUpdateChange(index, 'id', e.target.value)} 
-                                            placeholder="e.g. 1"
-                                        />
-                                    </td>
-                                    <td style={styles.td}>
-                                        <input 
-                                            style={styles.input} 
-                                            value={row.name} 
-                                            onChange={(e) => handleUpdateChange(index, 'name', e.target.value)} 
-                                            placeholder="Leave blank to skip"
-                                        />
-                                    </td>
-                                    <td style={styles.td}>
-                                        <input 
-                                            style={styles.input} 
-                                            value={row.description} 
-                                            onChange={(e) => handleUpdateChange(index, 'description', e.target.value)} 
-                                            placeholder="Leave blank to skip"
-                                        />
-                                    </td>
-                                    <td style={styles.td}>
-                                        <input 
-                                            style={styles.input} 
-                                            type="number" 
-                                            value={row.quantity} 
-                                            onChange={(e) => handleUpdateChange(index, 'quantity', e.target.value)} 
-                                            placeholder="Leave blank to skip"
-                                        />
-                                    </td>
-                                    <td style={styles.td}>
-                                        <input 
-                                            style={styles.input} 
-                                            type="number" 
-                                            step="0.01"
-                                            value={row.price} 
-                                            onChange={(e) => handleUpdateChange(index, 'price', e.target.value)} 
-                                            placeholder="Leave blank to skip"
-                                        />
-                                    </td>
-                                    <td style={styles.td}>
-                                        <select 
-                                            style={styles.select} 
-                                            value={row.category} 
-                                            onChange={(e) => handleUpdateChange(index, 'category', e.target.value)}
-                                        >
-                                            <option value="">Skip / Uncategorized</option>
-                                            {categories.map(c => (
-                                                <option key={c.id} value={c.name}>{c.name}</option>
-                                            ))}
-                                        </select>
-                                    </td>
-                                    <td style={styles.td}>
-                                        <button style={styles.removeBtn} onClick={() => removeUpdateRow(index)}>✕</button>
-                                    </td>
-                                </tr>
-                            ))}
+                            <AnimatePresence mode="popLayout">
+                                {updateRows.map((row, index) => (
+                                    <motion.tr 
+                                        key={index} 
+                                        layout
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.9 }}
+                                        transition={{ duration: 0.15 }}
+                                        style={styles.tr}
+                                    >
+                                        <td style={styles.td}>
+                                            <input 
+                                                style={styles.input} 
+                                                value={row.id} 
+                                                onChange={(e) => handleUpdateChange(index, 'id', e.target.value)} 
+                                                placeholder="e.g. 1"
+                                            />
+                                        </td>
+                                        <td style={styles.td}>
+                                            <input 
+                                                style={styles.input} 
+                                                value={row.name} 
+                                                onChange={(e) => handleUpdateChange(index, 'name', e.target.value)} 
+                                                placeholder="Leave blank to skip"
+                                            />
+                                        </td>
+                                        <td style={styles.td}>
+                                            <input 
+                                                style={styles.input} 
+                                                value={row.description} 
+                                                onChange={(e) => handleUpdateChange(index, 'description', e.target.value)} 
+                                                placeholder="Leave blank to skip"
+                                            />
+                                        </td>
+                                        <td style={styles.td}>
+                                            <input 
+                                                style={styles.input} 
+                                                type="number" 
+                                                value={row.quantity} 
+                                                onChange={(e) => handleUpdateChange(index, 'quantity', e.target.value)} 
+                                                placeholder="Leave blank to skip"
+                                            />
+                                        </td>
+                                        <td style={styles.td}>
+                                            <input 
+                                                style={styles.input} 
+                                                type="number" 
+                                                step="0.01"
+                                                value={row.price} 
+                                                onChange={(e) => handleUpdateChange(index, 'price', e.target.value)} 
+                                                placeholder="Leave blank to skip"
+                                            />
+                                        </td>
+                                        <td style={styles.td}>
+                                            <select 
+                                                style={styles.select} 
+                                                value={row.category} 
+                                                onChange={(e) => handleUpdateChange(index, 'category', e.target.value)}
+                                            >
+                                                <option value="">Skip / Uncategorized</option>
+                                                {categories.map(c => (
+                                                    <option key={c.id} value={c.name}>{c.name}</option>
+                                                ))}
+                                            </select>
+                                        </td>
+                                        <td style={styles.td}>
+                                            <motion.button 
+                                                whileHover={{ scale: 1.1 }} 
+                                                whileTap={{ scale: 0.9 }}
+                                                style={styles.removeBtn} 
+                                                onClick={() => removeUpdateRow(index)}
+                                            >
+                                                ✕
+                                            </motion.button>
+                                        </td>
+                                    </motion.tr>
+                                ))}
+                            </AnimatePresence>
                         </tbody>
                     </table>
                 </div>
-                <button style={styles.addRowBtn} onClick={addUpdateRow}>+ Add Row</button>
-                <button style={styles.submitBtn} onClick={handleBulkUpdate} disabled={loading}>
+                <motion.button 
+                    whileHover={{ scale: 1.02 }} 
+                    whileTap={{ scale: 0.95 }}
+                    style={styles.addRowBtn} 
+                    onClick={addUpdateRow}
+                >
+                    + Add Row
+                </motion.button>
+                <motion.button 
+                    whileHover={{ scale: 1.02 }} 
+                    whileTap={{ scale: 0.95 }}
+                    style={styles.submitBtn} 
+                    onClick={handleBulkUpdate} 
+                    disabled={loading}
+                >
                     {loading ? 'Updating...' : 'Update Products'}
-                </button>
+                </motion.button>
             </div>
-        </div>
+        </motion.div>
     );
 }
 

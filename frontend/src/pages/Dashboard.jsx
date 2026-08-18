@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { productAPI, categoryAPI } from '../api/api';
 
 function Dashboard() {
@@ -33,33 +34,70 @@ function Dashboard() {
         }
     };
 
+    // Animation variants for staggered card entrance
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: { 
+            opacity: 1, 
+            transition: { staggerChildren: 0.1 }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 15 },
+        visible: { opacity: 1, y: 0 }
+    };
+
     if (loading) {
         return <div style={styles.loading}>Loading...</div>;
     }
 
     return (
-        <div style={styles.container}>
+        <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            transition={{ duration: 0.3 }}
+            style={styles.container}
+        >
             <h1 style={styles.title}>Dashboard</h1>
-            <div style={styles.cards}>
-                <div style={styles.card}>
+            
+            <motion.div 
+                style={styles.cards}
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+            >
+                <motion.div variants={itemVariants} style={styles.card}>
                     <h3>Total Products</h3>
                     <p style={styles.number}>{stats.total}</p>
-                </div>
-                <div style={{...styles.card, borderColor: '#ff4757'}}>
+                </motion.div>
+                <motion.div variants={itemVariants} style={{...styles.card, borderColor: '#ff4757'}}>
                     <h3>Low Stock</h3>
                     <p style={{...styles.number, color: '#ff4757'}}>{stats.lowStock}</p>
-                </div>
-                <div style={{...styles.card, borderColor: '#00d4aa'}}>
+                </motion.div>
+                <motion.div variants={itemVariants} style={{...styles.card, borderColor: '#00d4aa'}}>
                     <h3>Categories</h3>
                     <p style={{...styles.number, color: '#00d4aa'}}>{stats.categories}</p>
-                </div>
-            </div>
-            <div style={styles.actions}>
-                <Link to="/products" style={styles.button}>View All Products</Link>
-                <Link to="/products/new" style={{...styles.button, backgroundColor: '#00d4aa'}}>Add New Product</Link>
-                <Link to="/categories" style={{...styles.button, backgroundColor: '#ff6b6b'}}>Manage Categories</Link>
-            </div>
-        </div>
+                </motion.div>
+            </motion.div>
+
+            <motion.div 
+                style={styles.actions}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.3 }}
+            >
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.95 }}>
+                    <Link to="/products" style={styles.button}>View All Products</Link>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.95 }}>
+                    <Link to="/products/new" style={{...styles.button, backgroundColor: '#00d4aa'}}>Add New Product</Link>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.95 }}>
+                    <Link to="/categories" style={{...styles.button, backgroundColor: '#ff6b6b'}}>Manage Categories</Link>
+                </motion.div>
+            </motion.div>
+        </motion.div>
     );
 }
 
@@ -105,6 +143,7 @@ const styles = {
         borderRadius: '5px',
         textDecoration: 'none',
         display: 'inline-block',
+        cursor: 'pointer',
     },
     loading: {
         color: '#fff',
