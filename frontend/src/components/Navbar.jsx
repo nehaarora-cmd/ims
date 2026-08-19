@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -73,98 +73,114 @@ function Navbar() {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden text-slate-300 hover:text-white p-2"
+            className="md:hidden text-slate-300 hover:text-white w-6 h-6 relative flex items-center justify-center focus:outline-none"
           >
-            <svg
-              className="w-6 h-6"
+            {/* Hamburger Icon */}
+            <motion.svg
+              className="absolute inset-0 w-6 h-6"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
+              animate={{ opacity: isOpen ? 0 : 1 }}
+              transition={{ duration: 0.2 }}
             >
-              {isOpen ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              )}
-            </svg>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </motion.svg>
+
+            {/* X Icon */}
+            <motion.svg
+              className="absolute inset-0 w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              animate={{ opacity: isOpen ? 1 : 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </motion.svg>
           </button>
         </div>
 
         {/* Mobile Menu Links */}
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden py-4 space-y-3 border-t border-slate-800"
-          >
-            {token && (
-              <>
-                <Link
-                  to="/dashboard"
-                  className="block text-slate-300 hover:text-white transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  to="/products"
-                  className="block text-slate-300 hover:text-white transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Products
-                </Link>
-                <Link
-                  to="/categories"
-                  className="block text-slate-300 hover:text-white transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Categories
-                </Link>
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setIsOpen(false);
-                  }}
-                  className="w-full text-left text-rose-400 hover:text-rose-300 transition-colors"
-                >
-                  Logout
-                </button>
-              </>
-            )}
-            {!token && (
-              <>
-                <Link
-                  to="/login"
-                  className="block text-slate-300 hover:text-white transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  className="block text-slate-300 hover:text-white transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Register
-                </Link>
-              </>
-            )}
-          </motion.div>
-        )}
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, borderTopWidth: 0 }}
+              animate={{ opacity: 1, height: "auto", borderTopWidth: 1 }}
+              exit={{ opacity: 0, height: 0, borderTopWidth: 0 }}
+              transition={{ duration: 0.2 }}
+              className="md:hidden border-t border-slate-800 overflow-hidden"
+            >
+              {/* Padding and spacing moved to this inner div */}
+              <div className="py-4 space-y-3">
+                {token && (
+                  <>
+                    <Link
+                      to="/dashboard"
+                      className="block text-slate-300 hover:text-white transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Dashboard
+                    </Link>
+                    <Link
+                      to="/products"
+                      className="block text-slate-300 hover:text-white transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Products
+                    </Link>
+                    <Link
+                      to="/categories"
+                      className="block text-slate-300 hover:text-white transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Categories
+                    </Link>
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setIsOpen(false);
+                      }}
+                      className="w-full text-left text-rose-400 hover:text-rose-300 transition-colors"
+                    >
+                      Logout
+                    </button>
+                  </>
+                )}
+                {!token && (
+                  <>
+                    <Link
+                      to="/login"
+                      className="block text-slate-300 hover:text-white transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Login
+                    </Link>
+                    <Link
+                      to="/register"
+                      className="block text-slate-300 hover:text-white transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Register
+                    </Link>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </nav>
   );
