@@ -1,185 +1,112 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { categoryAPI } from '../api/api';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { categoryAPI } from "../api/api";
 
 function Categories() {
-    const [categories, setCategories] = useState([]);
-    const [newCategory, setNewCategory] = useState('');
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+  const [categories, setCategories] = useState([]);
+  const [newCategory, setNewCategory] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-    useEffect(() => {
-        fetchCategories();
-    }, []);
+  const fetchCategories = async () => {
+    try {
+      const response = await categoryAPI.getAll();
+      setCategories(response.data);
+    } catch (err) {
+      setError("Failed to fetch categories: " + err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const fetchCategories = async () => {
-        try {
-            const response = await categoryAPI.getAll();
-            setCategories(response.data);
-        } catch (err) {
-            setError('Failed to fetch categories');
-        } finally {
-            setLoading(false);
-        }
-    };
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
-    const handleCreate = async (e) => {
-        e.preventDefault();
-        if (!newCategory.trim()) return;
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    if (!newCategory.trim()) return;
+    try {
+      const response = await categoryAPI.create({ name: newCategory });
+      setCategories([...categories, response.data]);
+      setNewCategory("");
+    } catch (err) {
+      alert("Failed to create category: " + err);
+    }
+  };
 
-        try {
-            const response = await categoryAPI.create({ name: newCategory });
-            setCategories([...categories, response.data]);
-            setNewCategory('');
-        } catch (err) {
-            alert('Failed to create category');
-        }
-    };
+  const handleDelete = async (id) => {
+    if (!confirm("Delete this category?")) return;
+    try {
+      await categoryAPI.delete(id);
+      setCategories(categories.filter((c) => c.id !== id));
+    } catch (err) {
+      alert("Failed to delete category: " + err);
+    }
+  };
 
-    const handleDelete = async (id) => {
-        if (!confirm('Delete this category?')) return;
-        try {
-            await categoryAPI.delete(id);
-            setCategories(categories.filter(c => c.id !== id));
-        } catch (err) {
-            alert('Failed to delete category');
-        }
-    };
-
-    if (loading) return <div style={styles.loading}>Loading...</div>;
-
+  if (loading)
     return (
-        <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            transition={{ duration: 0.3 }}
-            style={styles.container}
-        >
-            <h1 style={styles.title}>Categories</h1>
-
-            <form onSubmit={handleCreate} style={styles.form}>
-                <input
-                    type="text"
-                    placeholder="New category name"
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
-                    style={styles.input}
-                />
-                <motion.button 
-                    whileHover={{ scale: 1.05 }} 
-                    whileTap={{ scale: 0.95 }}
-                    type="submit" 
-                    style={styles.button}
-                >
-                    Add Category
-                </motion.button>
-            </form>
-
-            {error && <p style={styles.error}>{error}</p>}
-
-            <div style={styles.list}>
-                {categories.length === 0 ? (
-                    <p style={styles.empty}>No categories yet. Create one!</p>
-                ) : (
-                    <AnimatePresence mode="popLayout">
-                        {categories.map(cat => (
-                            <motion.div 
-                                key={cat.id} 
-                                layout
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.9 }}
-                                transition={{ duration: 0.15 }}
-                                style={styles.item}
-                            >
-                                <span>{cat.name}</span>
-                                <motion.button 
-                                    whileHover={{ scale: 1.1 }} 
-                                    whileTap={{ scale: 0.9 }}
-                                    onClick={() => handleDelete(cat.id)} 
-                                    style={styles.deleteBtn}
-                                >
-                                    Delete
-                                </motion.button>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
-                )}
-            </div>
-        </motion.div>
+      <div className="flex justify-center items-center min-h-[60vh] text-slate-400">
+        Loading...
+      </div>
     );
-}
 
-const styles = {
-    container: {
-        maxWidth: '600px',
-        margin: '40px auto',
-        padding: '0 20px',
-    },
-    title: {
-        color: '#fff',
-        marginBottom: '30px',
-    },
-    form: {
-        display: 'flex',
-        gap: '10px',
-        marginBottom: '30px',
-    },
-    input: {
-        flex: 1,
-        padding: '12px',
-        borderRadius: '5px',
-        border: '1px solid #333',
-        backgroundColor: '#1a1a2e',
-        color: '#fff',
-        fontSize: '16px',
-    },
-    button: {
-        padding: '12px 24px',
-        backgroundColor: '#4facfe',
-        color: '#fff',
-        border: 'none',
-        borderRadius: '5px',
-        cursor: 'pointer',
-        fontWeight: '500',
-    },
-    list: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px',
-    },
-    item: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '15px',
-        backgroundColor: '#1a1a2e',
-        borderRadius: '5px',
-        border: '1px solid #333',
-        color: '#fff',
-    },
-    deleteBtn: {
-        backgroundColor: '#ff4757',
-        color: '#fff',
-        border: 'none',
-        padding: '5px 15px',
-        borderRadius: '5px',
-        cursor: 'pointer',
-    },
-    error: {
-        color: '#ff4757',
-        marginBottom: '15px',
-    },
-    empty: {
-        color: '#aaa',
-        textAlign: 'center',
-        marginTop: '30px',
-    },
-    loading: {
-        color: '#fff',
-        textAlign: 'center',
-        marginTop: '50px',
-    },
-};
+  return (
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
+      <h1 className="text-3xl font-bold text-white mb-6 tracking-tight">
+        Categories
+      </h1>
+
+      <form onSubmit={handleCreate} className="flex gap-3 mb-8">
+        <input
+          type="text"
+          placeholder="New category name"
+          value={newCategory}
+          onChange={(e) => setNewCategory(e.target.value)}
+          className="flex-1 px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+        />
+        <button
+          type="submit"
+          className="px-6 py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-medium rounded-lg transition-colors shadow-lg shadow-cyan-600/20"
+        >
+          Add
+        </button>
+      </form>
+
+      {error && <p className="text-rose-500 text-center mb-4">{error}</p>}
+
+      <div className="space-y-3">
+        {categories.length === 0 ? (
+          <p className="text-center text-slate-500">
+            No categories yet. Create one!
+          </p>
+        ) : (
+          <AnimatePresence mode="popLayout">
+            {categories.map((cat) => (
+              <motion.div
+                key={cat.id}
+                layout
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.15 }}
+                className="flex justify-between items-center p-4 bg-slate-900 border border-slate-800 rounded-xl shadow-sm hover:border-slate-700 transition-colors"
+              >
+                <span className="text-slate-200 font-medium">{cat.name}</span>
+                <button
+                  onClick={() => handleDelete(cat.id)}
+                  className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white text-sm rounded-lg transition-colors"
+                >
+                  Delete
+                </button>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default Categories;
