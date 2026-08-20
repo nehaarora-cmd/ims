@@ -35,7 +35,7 @@ function CreateProduct() {
         description,
         quantity: parseInt(quantity),
         price: parseFloat(price),
-        category_id: categoryId || null,
+        category_id: parseInt(categoryId) || null,
       });
       navigate("/products");
     } catch (err) {
