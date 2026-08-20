@@ -84,15 +84,18 @@ func ProductByIDHandler(db *gorm.DB) http.HandlerFunc {
 		}
 
 		if r.Method == "GET" {
-			var product models.Product
-			result := db.Where("id = ? AND user_id = ?", id, userID).First(&product)
+			var products []models.Product
+			result := db.Where("user_id = ?", userID).Find(&products)
 			if result.Error != nil {
-				w.WriteHeader(http.StatusNotFound)
-				json.NewEncoder(w).Encode(map[string]string{"error": "Product not found"})
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Database error"})
 				return
 			}
+			if products == nil {
+				products = []models.Product{}
+			}
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(product)
+			json.NewEncoder(w).Encode(products)
 			return
 		}
 
