@@ -56,7 +56,7 @@ func RegisterHandler(db *gorm.DB) http.HandlerFunc {
 	}
 }
 
-func LoginHandler(db *gorm.DB, jwtSecret []byte) http.HandlerFunc {
+func LoginHandler(db *gorm.DB, jwtSecret []byte, jwtTime uint) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
@@ -92,7 +92,7 @@ func LoginHandler(db *gorm.DB, jwtSecret []byte) http.HandlerFunc {
 		claims := models.Claims{
 			UserID: user.ID,
 			RegisteredClaims: jwt.RegisteredClaims{
-				ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(jwtTime) * time.Minute)),
 				IssuedAt:  jwt.NewNumericDate(time.Now()),
 			},
 		}

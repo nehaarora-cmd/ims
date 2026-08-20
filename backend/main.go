@@ -11,6 +11,7 @@ import (
 	"ims/database"
 	"ims/models"
 	"ims/routes"
+	"strconv"
 )
 
 func main() {
@@ -21,12 +22,17 @@ func main() {
 	} else {
 		log.Println(".env file loaded successfully")
 	}
-
-	// Get JWT secret
 	jwtSecret := []byte(os.Getenv("JWT_SECRET"))
 	if len(jwtSecret) == 0 {
 		log.Fatal("JWT_SECRET is required in .env file")
 	}
+
+	jwtTimeStr := os.Getenv("JWT_TIME")
+	jwtTime64, err := strconv.ParseUint(jwtTimeStr, 10, 0)
+	if err != nil {
+		log.Fatalf("Invalid JWT_TIME: %v", err)
+	}
+	jwtTime := uint(jwtTime64)
 
 	// Connect to database
 	database.Connect()
@@ -37,7 +43,7 @@ func main() {
 	log.Println("Database migration completed")
 
 	// Setup routes
-	r := routes.SetupRoutes(db, jwtSecret)
+	r := routes.SetupRoutes(db, jwtSecret, jwtTime)
 
 	// Add CORS middleware
 	c := cors.New(cors.Options{

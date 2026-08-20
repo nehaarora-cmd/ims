@@ -8,7 +8,7 @@ import (
 	"ims/middleware"
 )
 
-func SetupRoutes(db *gorm.DB, jwtSecret []byte) *mux.Router {
+func SetupRoutes(db *gorm.DB, jwtSecret []byte, jwtTime uint) *mux.Router {
 	middleware.InitJWT(jwtSecret)
 
 	r := mux.NewRouter()
@@ -16,7 +16,7 @@ func SetupRoutes(db *gorm.DB, jwtSecret []byte) *mux.Router {
 	// Public routes
 	r.HandleFunc("/api/health", handlers.HealthHandler).Methods("GET")
 	r.HandleFunc("/api/auth/register", handlers.RegisterHandler(db)).Methods("POST")
-	r.HandleFunc("/api/auth/login", handlers.LoginHandler(db, jwtSecret)).Methods("POST")
+	r.HandleFunc("/api/auth/login", handlers.LoginHandler(db, jwtSecret, jwtTime)).Methods("POST")
 
 	// Protected routes
 	protected := r.PathPrefix("/api").Subrouter()
