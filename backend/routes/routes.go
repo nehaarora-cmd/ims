@@ -13,7 +13,7 @@ func SetupRoutes(db *gorm.DB, jwtSecret []byte, jwtTime uint) *mux.Router {
 
 	r := mux.NewRouter()
 
-	r.Use(middleware.MaxBytesMiddleware(128 << 20))
+	r.Use(middleware.MaxBytesMiddleware(5 << 20))
 
 	// Public routes
 	r.HandleFunc("/api/health", handlers.HealthHandler).Methods("GET")
