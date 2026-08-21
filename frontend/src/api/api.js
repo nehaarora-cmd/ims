@@ -16,7 +16,11 @@ API.interceptors.request.use((config) => {
 API.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      error.response.data.error != "Invalid credentials"
+    ) {
       localStorage.removeItem("token");
       window.location.href = "/login";
     }
