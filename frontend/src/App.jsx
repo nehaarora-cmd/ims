@@ -31,6 +31,7 @@ function AnimatedRoutes() {
       if (token) {
         try {
           const decoded = jwtDecode(token);
+          console.log(decoded.exp);
           // JWT exp is in seconds, Date.now() is in milliseconds
           if (decoded.exp && decoded.exp * 1000 < Date.now()) {
             localStorage.removeItem("token");
