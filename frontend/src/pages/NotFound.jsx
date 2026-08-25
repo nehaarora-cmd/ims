@@ -20,10 +20,10 @@ function NotFound() {
         </p>
 
         <Link
-          to="/dashboard"
+          to="/"
           className="inline-block px-8 py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-medium rounded-lg transition-colors shadow-lg shadow-cyan-600/20"
         >
-          Return to Dashboard
+          Return to home page
         </Link>
       </motion.div>
     </div>
