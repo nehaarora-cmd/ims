@@ -85,7 +85,7 @@ func ProductByIDHandler(db *gorm.DB) http.HandlerFunc {
 
 		if r.Method == "GET" {
 			var products []models.Product
-			result := db.Where("id = ? user_id = ?", userID).Find(&products)
+			result := db.Where("id = ? user_id = ?", id, userID).Find(&products)
 			if result.Error != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(map[string]string{"error": "Database error"})
