@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import API from "../api/api";
+import API, { categoryAPI } from "../api/api";
 
 function EditProduct() {
   const { id } = useParams();
@@ -9,6 +9,8 @@ function EditProduct() {
   const [description, setDescription] = useState("");
   const [quantity, setQuantity] = useState("");
   const [price, setPrice] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [categories, setCategories] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -22,13 +24,25 @@ function EditProduct() {
         setDescription(product.description);
         setQuantity(product.quantity.toString());
         setPrice(product.price.toString());
+        setCategoryId(product.category_id ? String(product.category_id) : "");
       } catch (err) {
         setError("Failed to fetch product: " + err);
       } finally {
         setLoading(false);
       }
     };
+
+    const fetchCategories = async () => {
+      try {
+        const response = await categoryAPI.getAll();
+        setCategories(response.data);
+      } catch (err) {
+        console.error("Failed to fetch categories:", err);
+      }
+    };
+
     fetchProduct();
+    fetchCategories();
   }, [id]);
 
   const handleSubmit = async (e) => {
@@ -40,6 +54,7 @@ function EditProduct() {
         description,
         quantity: parseInt(quantity),
         price: parseFloat(price),
+        category_id: categoryId ? parseInt(categoryId) : null,
       });
       navigate("/products");
     } catch (err) {
@@ -98,6 +113,22 @@ function EditProduct() {
           rows={3}
           className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
         />
+
+        {/* Category Dropdown */}
+        <motion.select
+          variants={itemVariants}
+          value={categoryId}
+          onChange={(e) => setCategoryId(e.target.value)}
+          className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+        >
+          <option value="">No Category</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.name}
+            </option>
+          ))}
+        </motion.select>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <motion.input
             variants={itemVariants}
