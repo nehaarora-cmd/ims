@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -84,18 +85,22 @@ func ProductByIDHandler(db *gorm.DB) http.HandlerFunc {
 		}
 
 		if r.Method == "GET" {
-			var products []models.Product
-			result := db.Where("id = ? AND user_id = ?", id, userID).Find(&products)
+			var product models.Product
+			result := db.Where("id = ? AND user_id = ?", id, userID).First(&product)
+
+			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				w.WriteHeader(http.StatusNotFound)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Product not found"})
+				return
+			}
 			if result.Error != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(map[string]string{"error": "Database error"})
 				return
 			}
-			if products == nil {
-				products = []models.Product{}
-			}
+
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(products)
+			json.NewEncoder(w).Encode(product)
 			return
 		}
 
