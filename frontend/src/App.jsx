@@ -18,6 +18,7 @@ import CreateProduct from "./pages/CreateProduct";
 import EditProduct from "./pages/EditProduct";
 import Categories from "./pages/Categories";
 import BulkOperations from "./pages/BulkOperations";
+import NotFound from "./pages/NotFound";
 import "./index.css";
 
 function AnimatedRoutes() {
@@ -181,6 +182,18 @@ function AnimatedRoutes() {
               <ProtectedRoute>
                 <Categories />
               </ProtectedRoute>
+            </motion.div>
+          }
+        />
+        <Route
+          path="*"
+          element={
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <NotFound />
             </motion.div>
           }
         />
