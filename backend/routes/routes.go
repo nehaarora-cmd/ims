@@ -16,7 +16,7 @@ func SetupRoutes(db *gorm.DB, jwtSecret []byte, jwtTime uint) *mux.Router {
 	r.Use(middleware.MaxBytesMiddleware(5 << 20))
 
 	// Public routes
-	r.HandleFunc("/api/health", handlers.HealthHandler).Methods("GET")
+	r.HandleFunc("/api/health", handlers.HealthHandler).Methods("GET", "HEAD")
 	r.HandleFunc("/api/auth/register", handlers.RegisterHandler(db)).Methods("POST")
 	r.HandleFunc("/api/auth/login", handlers.LoginHandler(db, jwtSecret, jwtTime)).Methods("POST")
 
