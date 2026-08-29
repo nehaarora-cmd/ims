@@ -4,14 +4,19 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/rs/cors" // Add this import
+	"github.com/rs/cors"
 
 	"ims/database"
 	"ims/models"
 	"ims/routes"
-	"strconv"
+
+	"github.com/ulule/limiter/v3"
+	"github.com/ulule/limiter/v3/drivers/middleware/stdlib"
+	"github.com/ulule/limiter/v3/drivers/store/memory"
 )
 
 func main() {
@@ -45,7 +50,24 @@ func main() {
 	// Setup routes
 	r := routes.SetupRoutes(db, jwtSecret, jwtTime)
 
-	// Add CORS middleware
+	rate := limiter.Rate{
+		Period: 1 * time.Minute,
+		Limit:  100,
+	}
+
+	// Use in-memory store (replace with Redis for distributed systems)
+	store := memory.NewStore()
+
+	instance := limiter.New(store, rate,
+		limiter.WithClientIPHeader("X-Forwarded-For"))
+
+	// Create stdlib middleware
+	limiterMiddleware := stdlib.NewMiddleware(instance)
+
+	// Apply rate limiter to your routes
+	rateLimitedHandler := limiterMiddleware.Handler(r)
+
+	// --- CORS MIDDLEWARE ---
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:5173", "http://localhost:3000", "https://ims-git-master-neha-arora.vercel.app"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"},
@@ -53,7 +75,9 @@ func main() {
 		AllowCredentials: true,
 	})
 
-	handler := c.Handler(r)
+	// Wrap with CORS (CORS first, then rate limiting, or vice versa)
+	// CORS usually needs to be outermost to handle preflight requests.
+	handler := c.Handler(rateLimitedHandler)
 
 	// Start server
 	port := os.Getenv("PORT")
