@@ -117,28 +117,90 @@ func ProductByIDHandler(db *gorm.DB) http.HandlerFunc {
 		}
 
 		if r.Method == "PATCH" {
-			var inputData models.Product
-			err := json.NewDecoder(r.Body).Decode(&inputData)
+			var raw map[string]interface{}
+			err := json.NewDecoder(r.Body).Decode(&raw)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 				json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request body"})
 				return
 			}
 
-			// --- START: QUANTITY & PRICE CHECKS ---
-			if inputData.Quantity < 0 {
+			if len(raw) == 0 {
 				w.WriteHeader(http.StatusBadRequest)
-				json.NewEncoder(w).Encode(map[string]string{"error": "Quantity cannot be negative"})
+				json.NewEncoder(w).Encode(map[string]string{"error": "No fields to update"})
 				return
 			}
-			if inputData.Price < 0 {
-				w.WriteHeader(http.StatusBadRequest)
-				json.NewEncoder(w).Encode(map[string]string{"error": "Price cannot be negative"})
-				return
-			}
-			// --- END: QUANTITY & PRICE CHECKS ---
 
-			result := db.Model(&models.Product{}).Where("id = ? AND user_id = ?", id, userID).Updates(&inputData)
+			updateMap := make(map[string]interface{})
+
+			if name, ok := raw["name"].(string); ok {
+				if name == "" {
+					w.WriteHeader(http.StatusBadRequest)
+					json.NewEncoder(w).Encode(map[string]string{"error": "Name cannot be empty"})
+					return
+				}
+				updateMap["name"] = name
+			}
+
+			if desc, ok := raw["description"].(string); ok {
+				updateMap["description"] = desc
+			}
+
+			if qty, ok := raw["quantity"]; ok {
+				qtyFloat, ok := qty.(float64)
+				if !ok {
+					w.WriteHeader(http.StatusBadRequest)
+					json.NewEncoder(w).Encode(map[string]string{"error": "Quantity must be a number"})
+					return
+				}
+				qtyInt := int(qtyFloat)
+				if qtyInt < 0 {
+					w.WriteHeader(http.StatusBadRequest)
+					json.NewEncoder(w).Encode(map[string]string{"error": "Quantity cannot be negative"})
+					return
+				}
+				updateMap["quantity"] = qtyInt
+			}
+
+			if price, ok := raw["price"]; ok {
+				priceFloat, ok := price.(float64)
+				if !ok {
+					w.WriteHeader(http.StatusBadRequest)
+					json.NewEncoder(w).Encode(map[string]string{"error": "Price must be a number"})
+					return
+				}
+				if priceFloat < 0 {
+					w.WriteHeader(http.StatusBadRequest)
+					json.NewEncoder(w).Encode(map[string]string{"error": "Price cannot be negative"})
+					return
+				}
+				updateMap["price"] = priceFloat
+			}
+
+			if catID, ok := raw["category_id"]; ok {
+				if catID == nil {
+					updateMap["category_id"] = nil
+				} else {
+					catIDFloat, ok := catID.(float64)
+					if !ok {
+						w.WriteHeader(http.StatusBadRequest)
+						json.NewEncoder(w).Encode(map[string]string{"error": "Category ID must be a number or null"})
+						return
+					}
+					updateMap["category_id"] = uint(catIDFloat)
+				}
+			}
+
+			if len(updateMap) == 0 {
+				w.WriteHeader(http.StatusBadRequest)
+				json.NewEncoder(w).Encode(map[string]string{"error": "No valid fields to update"})
+				return
+			}
+
+			result := db.Model(&models.Product{}).
+				Where("id = ? AND user_id = ?", id, userID).
+				Updates(updateMap)
+
 			if result.Error != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(map[string]string{"error": result.Error.Error()})
@@ -151,8 +213,16 @@ func ProductByIDHandler(db *gorm.DB) http.HandlerFunc {
 				return
 			}
 
+			var updatedProduct models.Product
+			err = db.Where("id = ? AND user_id = ?", id, userID).First(&updatedProduct).Error
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Failed to retrieve updated product"})
+				return
+			}
+
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]string{"message": "Product updated successfully"})
+			json.NewEncoder(w).Encode(updatedProduct)
 			return
 		}
 
@@ -325,9 +395,9 @@ func BulkDeleteHandler(db *gorm.DB) http.HandlerFunc {
 
 		result := db.Where("id IN ? AND user_id = ?", req.IDs, userID).Delete(&models.Product{})
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]string{
+		json.NewEncoder(w).Encode(map[string]interface{}{
 			"message": "Products deleted successfully",
-			"count":   string(rune(result.RowsAffected)),
+			"count":   result.RowsAffected,
 		})
 	}
 }
