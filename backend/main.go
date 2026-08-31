@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/rs/cors"
@@ -13,25 +12,23 @@ import (
 	"ims/database"
 	"ims/models"
 	"ims/routes"
-
-	"github.com/ulule/limiter/v3"
-	"github.com/ulule/limiter/v3/drivers/middleware/stdlib"
-	"github.com/ulule/limiter/v3/drivers/store/memory"
 )
 
 func main() {
 	// Load .env
-	err := godotenv.Load()
-	if err != nil {
+	if err := godotenv.Load(); err != nil {
 		log.Println("Warning: .env file not found, using environment variables")
 	} else {
 		log.Println(".env file loaded successfully")
 	}
+
+	// JWT Secret
 	jwtSecret := []byte(os.Getenv("JWT_SECRET"))
 	if len(jwtSecret) == 0 {
 		log.Fatal("JWT_SECRET is required in .env file")
 	}
 
+	// JWT Expiry
 	jwtTimeStr := os.Getenv("JWT_TIME")
 	jwtTime64, err := strconv.ParseUint(jwtTimeStr, 10, 0)
 	if err != nil {
@@ -44,42 +41,29 @@ func main() {
 	db := database.DB
 
 	// Auto migrate
-	db.AutoMigrate(&models.User{}, &models.Category{}, &models.Product{})
+	if err := db.AutoMigrate(&models.User{}, &models.Category{}, &models.Product{}); err != nil {
+		log.Fatal("Failed to migrate database:", err)
+	}
 	log.Println("Database migration completed")
 
-	// Setup routes
+	// Setup routes (rate limiting is now inside routes.go)
 	r := routes.SetupRoutes(db, jwtSecret, jwtTime)
 
-	rate := limiter.Rate{
-		Period: 1 * time.Minute,
-		Limit:  100,
-	}
-
-	// Use in-memory store (replace with Redis for distributed systems)
-	store := memory.NewStore()
-
-	instance := limiter.New(store, rate,
-		limiter.WithClientIPHeader("X-Forwarded-For"))
-
-	// Create stdlib middleware
-	limiterMiddleware := stdlib.NewMiddleware(instance)
-
-	// Apply rate limiter to your routes
-	rateLimitedHandler := limiterMiddleware.Handler(r)
-
-	// --- CORS MIDDLEWARE ---
+	// --- CORS ---
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:5173", "http://localhost:3000", "https://ims-git-master-neha-arora.vercel.app"},
+		AllowedOrigins: []string{
+			"http://localhost:5173",
+			"http://localhost:3000",
+			"https://ims-git-master-neha-arora.vercel.app",
+		},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"},
 		AllowedHeaders:   []string{"Authorization", "Content-Type"},
 		AllowCredentials: true,
 	})
 
-	// Wrap with CORS (CORS first, then rate limiting, or vice versa)
-	// CORS usually needs to be outermost to handle preflight requests.
-	handler := c.Handler(rateLimitedHandler)
+	handler := c.Handler(r)
 
-	// Start server
+	// --- Start Server ---
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
