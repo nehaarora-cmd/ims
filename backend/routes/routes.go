@@ -1,9 +1,10 @@
 package routes
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/didip/tollbooth/v8"
 	"github.com/didip/tollbooth/v8/limiter"
@@ -20,16 +21,13 @@ func SetupRoutes(db *gorm.DB, jwtSecret []byte, jwtTime uint) *mux.Router {
 	r := mux.NewRouter()
 	r.Use(middleware.MaxBytesMiddleware(5 << 20))
 
-	// Determine IP lookup strategy based on environment
 	ipLookupName := os.Getenv("IP_LOOKUP")
 	if ipLookupName == "" {
 		ipLookupName = "RemoteAddr"
 	}
-	fmt.Printf("Using %s as IPLookupName.\n", ipLookupName)
+	log.Printf("Using %s as IPLookupName", ipLookupName)
 
 	// --- Create Limiters ---
-
-	// Auth limiter: 10 requests per minute (RPM)
 	authLimiter := tollbooth.NewLimiter(10, nil)
 	authLimiter.SetIPLookup(limiter.IPLookup{
 		Name:           ipLookupName,
@@ -37,7 +35,6 @@ func SetupRoutes(db *gorm.DB, jwtSecret []byte, jwtTime uint) *mux.Router {
 	})
 	authLimiter.SetMethods([]string{"POST"})
 
-	// API limiter: 5 requests per second (RPS)
 	apiLimiter := tollbooth.NewLimiter(5, nil)
 	apiLimiter.SetIPLookup(limiter.IPLookup{
 		Name:           ipLookupName,
@@ -45,35 +42,45 @@ func SetupRoutes(db *gorm.DB, jwtSecret []byte, jwtTime uint) *mux.Router {
 	})
 	apiLimiter.SetMethods([]string{"GET", "POST", "PUT", "PATCH", "DELETE"})
 
-	// --- Public Routes ---
+	// --- Global middleware: apply rate limiting based on route ---
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			path := req.URL.Path
 
-	// Health: no rate limit
+			// Public auth routes: 10 RPM
+			if strings.HasPrefix(path, "/api/auth/") {
+				tollbooth.LimitHandler(authLimiter, next).ServeHTTP(w, req)
+				return
+			}
+
+			// Protected API routes: 5 RPS (but skip health)
+			if strings.HasPrefix(path, "/api/") && path != "/api/health" {
+				tollbooth.LimitHandler(apiLimiter, next).ServeHTTP(w, req)
+				return
+			}
+
+			// Health: no limit
+			next.ServeHTTP(w, req)
+		})
+	})
+
+	// --- Routes ---
+
+	// Health (no limit)
 	r.HandleFunc("/api/health", handlers.HealthHandler(db)).Methods("GET", "HEAD")
 
-	// Auth routes (register & login) with authLimiter middleware
-	authRouter := r.PathPrefix("/api/auth").Subrouter()
-	authRouter.Use(func(next http.Handler) http.Handler {
-		return tollbooth.LimitHandler(authLimiter, next)
-	})
-	authRouter.HandleFunc("/register", handlers.RegisterHandler(db)).Methods("POST")
-	authRouter.HandleFunc("/login", handlers.LoginHandler(db, jwtSecret, jwtTime)).Methods("POST")
+	// Auth routes
+	r.HandleFunc("/api/auth/register", handlers.RegisterHandler(db)).Methods("POST")
+	r.HandleFunc("/api/auth/login", handlers.LoginHandler(db, jwtSecret, jwtTime)).Methods("POST")
 
-	// --- Protected Routes (Auth Required + 5 RPS) ---
+	// Protected routes (auth middleware)
 	protected := r.PathPrefix("/api").Subrouter()
 	protected.Use(middleware.AuthMiddleware)
-	protected.Use(func(next http.Handler) http.Handler {
-		return tollbooth.LimitHandler(apiLimiter, next)
-	})
 
-	// Categories
 	protected.HandleFunc("/categories", handlers.CategoriesHandler(db)).Methods("GET", "POST")
 	protected.HandleFunc("/categories/{id}", handlers.CategoryByIDHandler(db)).Methods("GET", "DELETE")
-
-	// Products
 	protected.HandleFunc("/products", handlers.ProductsHandler(db)).Methods("GET", "POST")
 	protected.HandleFunc("/products/{id}", handlers.ProductByIDHandler(db)).Methods("GET", "DELETE", "PATCH")
-
-	// Bulk operations
 	protected.HandleFunc("/products/bulk/create", handlers.BulkCreateHandler(db)).Methods("POST")
 	protected.HandleFunc("/products/bulk/update", handlers.BulkUpdateHandler(db)).Methods("PATCH")
 	protected.HandleFunc("/products/bulk/delete", handlers.BulkDeleteHandler(db)).Methods("DELETE")
