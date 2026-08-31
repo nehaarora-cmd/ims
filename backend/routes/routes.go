@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 
@@ -9,7 +10,6 @@ import (
 	"github.com/gorilla/mux"
 	"gorm.io/gorm"
 
-	"fmt"
 	"ims/handlers"
 	"ims/middleware"
 )
@@ -20,16 +20,16 @@ func SetupRoutes(db *gorm.DB, jwtSecret []byte, jwtTime uint) *mux.Router {
 	r := mux.NewRouter()
 	r.Use(middleware.MaxBytesMiddleware(5 << 20))
 
+	// Determine IP lookup strategy based on environment
 	ipLookupName := os.Getenv("IP_LOOKUP")
 	if ipLookupName == "" {
 		ipLookupName = "RemoteAddr"
 	}
-
 	fmt.Printf("Using %s as IPLookupName.\n", ipLookupName)
 
-	// --- Limiters ---
+	// --- Create Limiters ---
 
-	// Auth limiter: 10 RPM
+	// Auth limiter: 10 requests per minute (RPM)
 	authLimiter := tollbooth.NewLimiter(10, nil)
 	authLimiter.SetIPLookup(limiter.IPLookup{
 		Name:           ipLookupName,
@@ -37,7 +37,7 @@ func SetupRoutes(db *gorm.DB, jwtSecret []byte, jwtTime uint) *mux.Router {
 	})
 	authLimiter.SetMethods([]string{"POST"})
 
-	// API limiter: 5 RPS
+	// API limiter: 5 requests per second (RPS)
 	apiLimiter := tollbooth.NewLimiter(5, nil)
 	apiLimiter.SetIPLookup(limiter.IPLookup{
 		Name:           ipLookupName,
@@ -45,17 +45,22 @@ func SetupRoutes(db *gorm.DB, jwtSecret []byte, jwtTime uint) *mux.Router {
 	})
 	apiLimiter.SetMethods([]string{"GET", "POST", "PUT", "PATCH", "DELETE"})
 
-	// --- Public routes ---
+	// --- Public Routes ---
+
+	// Health: no rate limit
 	r.HandleFunc("/api/health", handlers.HealthHandler(db)).Methods("GET", "HEAD")
 
-	r.Handle("/api/auth/register", tollbooth.LimitHandler(authLimiter, http.HandlerFunc(handlers.RegisterHandler(db)))).Methods("POST")
-	r.Handle("/api/auth/login", tollbooth.LimitHandler(authLimiter, http.HandlerFunc(handlers.LoginHandler(db, jwtSecret, jwtTime)))).Methods("POST")
+	// Auth routes (register & login) with authLimiter middleware
+	authRouter := r.PathPrefix("/api/auth").Subrouter()
+	authRouter.Use(func(next http.Handler) http.Handler {
+		return tollbooth.LimitHandler(authLimiter, next)
+	})
+	authRouter.HandleFunc("/register", handlers.RegisterHandler(db)).Methods("POST")
+	authRouter.HandleFunc("/login", handlers.LoginHandler(db, jwtSecret, jwtTime)).Methods("POST")
 
-	// --- Protected routes ---
+	// --- Protected Routes (Auth Required + 5 RPS) ---
 	protected := r.PathPrefix("/api").Subrouter()
 	protected.Use(middleware.AuthMiddleware)
-
-	// Apply the API limiter as middleware
 	protected.Use(func(next http.Handler) http.Handler {
 		return tollbooth.LimitHandler(apiLimiter, next)
 	})
