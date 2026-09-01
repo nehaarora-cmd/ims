@@ -35,7 +35,7 @@ func SetupRoutes(db *gorm.DB, jwtSecret []byte, jwtTime uint) *mux.Router {
 			"X-Forwarded-For":  true,
 			"X-Real-IP":        true,
 			"RemoteAddr":       true,
-			"CF-Connection-IP": true,
+			"CF-Connecting-IP": true,
 		}
 		if !allowed[ipSource] {
 			panic("invalid IP_LOOKUP: must be one of X-Forwarded-For, X-Real-IP, RemoteAddr, CF-Connection-IP")
@@ -99,7 +99,7 @@ func SetupRoutes(db *gorm.DB, jwtSecret []byte, jwtTime uint) *mux.Router {
 		panic(err)
 	}
 
-	r.HandleFunc("/api/health", handlers.HealthHandler(db)).Methods("GET", "HEAD")
+	r.Handle("/api/health", apiLimiter.Handle(handlers.HealthHandler(db))).Methods("GET", "HEAD")
 
 	authRouter := r.PathPrefix("/api/auth").Subrouter()
 	authRouter.Handle("/register", authLimiter.Handle(handlers.RegisterHandler(db))).Methods("POST")
