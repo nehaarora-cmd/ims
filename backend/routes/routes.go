@@ -58,6 +58,8 @@ func SetupRoutes(db *gorm.DB, jwtSecret []byte, jwtTime uint) *mux.Router {
 			} else {
 				ip = req.RemoteAddr
 			}
+		case "CF-Connecting-IP":
+			ip = req.Header.Get("CF-Connecting-IP")
 		}
 
 		if ip == "" {
