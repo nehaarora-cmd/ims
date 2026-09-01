@@ -32,12 +32,13 @@ func SetupRoutes(db *gorm.DB, jwtSecret []byte, jwtTime uint) *mux.Router {
 		var ip string
 
 		allowed := map[string]bool{
-			"X-Forwarded-For": true,
-			"X-Real-IP":       true,
-			"RemoteAddr":      true,
+			"X-Forwarded-For":  true,
+			"X-Real-IP":        true,
+			"RemoteAddr":       true,
+			"CF-Connection-IP": true,
 		}
 		if !allowed[ipSource] {
-			panic("invalid IP_LOOKUP: must be one of X-Forwarded-For, X-Real-IP, RemoteAddr")
+			panic("invalid IP_LOOKUP: must be one of X-Forwarded-For, X-Real-IP, RemoteAddr, CF-Connection-IP")
 		}
 
 		switch ipSource {
