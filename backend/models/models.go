@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -16,6 +18,11 @@ type Category struct {
 	UserID   uint      `json:"user_id"`
 	Name     string    `json:"name"`
 	Products []Product `gorm:"foreignKey:CategoryID"`
+}
+
+type KeepAlive struct {
+	ID       uint      `gorm:"primaryKey"`
+	LastPing time.Time `json:"last_ping"`
 }
 
 type Product struct {

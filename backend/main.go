@@ -10,6 +10,7 @@ import (
 	"github.com/rs/cors"
 
 	"ims/database"
+	"ims/misc"
 	"ims/models"
 	"ims/routes"
 )
@@ -41,10 +42,12 @@ func main() {
 	db := database.DB
 
 	// Auto migrate
-	if err := db.AutoMigrate(&models.User{}, &models.Category{}, &models.Product{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.Category{}, &models.Product{}, &models.KeepAlive{}); err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}
 	log.Println("Database migration completed")
+
+	go misc.Ping(db)
 
 	// Setup routes (rate limiting is now inside routes.go)
 	r := routes.SetupRoutes(db, jwtSecret, jwtTime)
