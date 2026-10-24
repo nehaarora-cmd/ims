@@ -25,6 +25,10 @@ type KeepAlive struct {
 	LastPing time.Time `json:"last_ping"`
 }
 
+func (KeepAlive) TableName() string {
+	return "keep_alive"
+}
+
 type Product struct {
 	ID          uint    `gorm:"primaryKey" json:"id"`
 	UserID      uint    `json:"user_id"`
