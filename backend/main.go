@@ -42,9 +42,13 @@ func main() {
 	db := database.DB
 
 	// Auto migrate
-	if err := db.AutoMigrate(&models.User{}, &models.Category{}, &models.Product{}, &models.KeepAlive{}); err != nil {
-		log.Fatal("Failed to migrate database:", err)
+	if tx := db.Exec("DROP TABLE IF EXISTS keep_alives CASCADE"); tx.Error != nil {
+		log.Fatal("Failed to migrate database: ", tx.Error.Error())
 	}
+	if err := db.AutoMigrate(&models.User{}, &models.Category{}, &models.Product{}, &models.KeepAlive{}); err != nil {
+		log.Fatal("Failed to migrate database:", err.Error())
+	}
+
 	log.Println("Database migration completed")
 
 	go misc.Ping(db)
